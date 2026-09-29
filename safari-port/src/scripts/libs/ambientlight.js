@@ -236,6 +236,54 @@ export default class Ambientlight {
       this.enableMozillaBugReadPixelsWorkaround = true;
     }
   }
+  // Safari workaround: drawImage(video) paints the video like it is rendered in the page.
+  // When the video element box doesn't match the video's aspect ratio (theater mode with
+  // object-fit: contain) the black letterbox bars end up in the ambient light.
+  // createImageBitmap(video) returns the plain frame instead. It is async, so the
+  // previous frame is drawn while the next one is being created.
+  isSafariVideoBoxMismatch() {
+    if (this.safariVideoBoxMismatchIsSafari === undefined) {
+      this.safariVideoBoxMismatchIsSafari =
+        /^((?!chrome|chromium|android).)*safari/i.test(navigator.userAgent) &&
+        typeof createImageBitmap === 'function';
+    }
+    if (!this.safariVideoBoxMismatchIsSafari) return false;
+
+    const video = this.videoElem;
+    const { offsetWidth, offsetHeight, videoWidth, videoHeight } = video;
+    if (!offsetWidth || !offsetHeight || !videoWidth || !videoHeight)
+      return false;
+    return (
+      Math.abs(offsetWidth / offsetHeight - videoWidth / videoHeight) > 0.02
+    );
+  }
+
+  getVideoDrawSource() {
+    const video = this.vrVideoElem ?? this.videoElem;
+    if (this.vrVideoElem || !this.isSafariVideoBoxMismatch()) {
+      if (this.videoBitmap) {
+        this.videoBitmap.close();
+        this.videoBitmap = undefined;
+      }
+      return video;
+    }
+
+    if (!this.videoBitmapPending) {
+      this.videoBitmapPending = createImageBitmap(video)
+        .then((bitmap) => {
+          this.videoBitmap?.close();
+          this.videoBitmap = bitmap;
+        })
+        .catch(() => {
+          this.safariVideoBoxMismatchIsSafari = false;
+        })
+        .finally(() => {
+          this.videoBitmapPending = undefined;
+        });
+    }
+    return this.videoBitmap ?? video;
+  }
+
   shouldDrawDirectlyFromVideoElem = () =>
     this.enableMozillaBugReadPixelsWorkaround &&
     this.projector.webGLVersion === 2;
@@ -3225,7 +3273,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
               0
             );
             this.videoOverlayBuffer.ctx.drawImage(
-              this.vrVideoElem ?? this.videoElem,
+              this.getVideoDrawSource(),
               0,
               0,
               this.videoOverlayBuffer.elem.width,
@@ -3257,7 +3305,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
             );
 
             this.projectorBuffer.ctx.drawImage(
-              this.vrVideoElem ?? this.videoElem,
+              this.getVideoDrawSource(),
               0,
               0,
               this.projectorBuffer.elem.width,
@@ -3371,7 +3419,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
           );
         }
         this.videoOverlay.ctx.drawImage(
-          this.vrVideoElem ?? this.videoElem,
+          this.getVideoDrawSource(),
           0,
           0,
           this.videoOverlay.elem.width,
@@ -3385,7 +3433,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
         if (!shouldDrawDirectlyFromVideoElem) {
           // console.log('draw', hasNewFrame, dontDrawAmbientlight, this.projectorBuffer.elem.width, this.projectorBuffer.elem.height)
           this.projectorBuffer.ctx.drawImage(
-            this.vrVideoElem ?? this.videoElem,
+            this.getVideoDrawSource(),
             0,
             0,
             this.projectorBuffer.elem.width,
@@ -3397,7 +3445,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
           if (!shouldDrawDirectlyFromVideoElem) {
             this.projector.draw(this.projectorBuffer.elem);
           } else {
-            this.projector.draw(this.vrVideoElem ?? this.videoElem);
+            this.projector.draw(this.getVideoDrawSource());
           }
         }
       }
