@@ -1898,32 +1898,13 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       }
     }
 
-    this.videoOffset = this.getElemRect(
-      this.isVrVideo ? this.vrVideoElem : this.videoElem
-    );
-    // The video element can fill the screen while the picture inside it is
-    // letterboxed by object-fit: contain (seen in Safari). Compare the size of the
-    // picture itself, otherwise the ambient light isn't drawn in the empty bars.
-    let fittedVideoWidth = this.videoOffset.width;
-    let fittedVideoHeight = this.videoOffset.height;
-    if (
-      this.videoElem.videoWidth &&
-      this.videoElem.videoHeight &&
-      this.videoOffset.width &&
-      this.videoOffset.height &&
-      getComputedStyle(this.videoElem).objectFit === 'contain'
-    ) {
-      const fitScale = Math.min(
-        this.videoOffset.width / this.videoElem.videoWidth,
-        this.videoOffset.height / this.videoElem.videoHeight
-      );
-      fittedVideoWidth = this.videoElem.videoWidth * fitScale;
-      fittedVideoHeight = this.videoElem.videoHeight * fitScale;
-    }
+    this.videoOffset = this.isVrVideo
+      ? this.getElemRect(this.vrVideoElem)
+      : this.getFittedVideoRect(this.videoElem);
     this.isFillingFullscreen =
       this.isFullscreen &&
-      Math.abs(fittedVideoWidth - window.innerWidth) < 10 &&
-      Math.abs(fittedVideoHeight - window.innerHeight) < 10 &&
+      Math.abs(this.videoOffset.width - window.innerWidth) < 10 &&
+      Math.abs(this.videoOffset.height - window.innerHeight) < 10 &&
       noClipOrScale;
 
     if (
@@ -2685,6 +2666,29 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     }
 
     return false;
+  }
+
+  // The video element can be larger than the picture inside it: YouTube sizes it to the
+  // player and object-fit: contain adds black bars (seen in Safari in fullscreen and
+  // theater mode). The ambient light must surround the picture, not the element.
+  getFittedVideoRect(videoElem) {
+    const rect = this.getElemRect(videoElem);
+    const { videoWidth, videoHeight } = videoElem;
+    if (!videoWidth || !videoHeight || !rect.width || !rect.height) return rect;
+    if (getComputedStyle(videoElem).objectFit !== 'contain') return rect;
+
+    const scale = Math.min(rect.width / videoWidth, rect.height / videoHeight);
+    const width = videoWidth * scale;
+    const height = videoHeight * scale;
+    if (Math.abs(width - rect.width) < 1 && Math.abs(height - rect.height) < 1)
+      return rect;
+
+    return {
+      top: rect.top + (rect.height - height) / 2,
+      left: rect.left + (rect.width - width) / 2,
+      width,
+      height,
+    };
   }
 
   getElemRect(elem) {
