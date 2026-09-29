@@ -1576,8 +1576,6 @@ export default class BarDetection {
                 throw error;
               }
 
-              globalThis.__ambDbg = (globalThis.__ambDbg || 0) + 1;
-              if (globalThis.__ambDbg <= 15) console.log('[ambient-safari-debug] worker result', JSON.stringify({ h: e.data.horizontalBarSizeInfo, v: e.data.verticalBarSizeInfo, err: e.data.error && String(e.data.error) }));
               const minPercentage = 1.25 + offsetPercentage;
               const { horizontalBarSizeInfo = {}, verticalBarSizeInfo = {} } =
                 e.data;
