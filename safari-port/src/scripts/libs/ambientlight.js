@@ -3424,6 +3424,8 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
 
   scheduleBarSizeDetection = async () => {
     try {
+      globalThis.__ambDbg3 = (globalThis.__ambDbg3 || 0) + 1;
+      if (globalThis.__ambDbg3 <= 5) console.log('[ambient-safari-debug] schedule', this.getImageDataAllowed);
       this.checkGetImageDataAllowed();
       if (!this.getImageDataAllowed) return;
 
@@ -3460,6 +3462,8 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     horizontalPercentage,
     verticalPercentage
   ) => {
+    globalThis.__ambDbg2 = (globalThis.__ambDbg2 || 0) + 1;
+    if (globalThis.__ambDbg2 <= 15) console.log('[ambient-safari-debug] callback', horizontalPercentage, verticalPercentage);
     const horizontalBarChanged =
       this.settings.detectHorizontalBarSizeEnabled &&
       horizontalPercentage !== undefined &&
