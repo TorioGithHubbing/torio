@@ -786,6 +786,34 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       document,
       'fullscreenchange',
       async function fullscreenchange() {
+        // TEMP DEBUG: heartbeat while in fullscreen
+        clearInterval(this.debugFsTimer);
+        if (document.fullscreenElement) {
+          let n = 0;
+          this.debugFsTimer = setInterval(() => {
+            if (++n > 40) return clearInterval(this.debugFsTimer);
+            try {
+              console.log(
+                '[ambient-safari-debug] fs',
+                JSON.stringify({
+                  n,
+                  hiddenObs: this.isAmbientlightHiddenOnWatchPage,
+                  canSchedule: this.canScheduleNextFrame(),
+                  scheduled: !!this.scheduledNextFrame,
+                  paused: this.videoElem.paused,
+                  isFullscreen: this.isFullscreen,
+                  filling: this.isFillingFullscreen,
+                  atTop: this.atTop,
+                  frameCount: this.videoFrameCount,
+                  ambientFrames: this.ambientlightFrameCount,
+                  sync: this.settings.frameSync,
+                })
+              );
+            } catch (e) {
+              console.log('[ambient-safari-debug] fs failed', String(e));
+            }
+          }, 1000);
+        }
         await this.updateSizes();
       }.bind(this),
       false
@@ -2804,7 +2832,8 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
       this.videoElem.paused ||
       this.videoElem.seeking ||
       this.isVideoHiddenOnWatchPage ||
-      this.isAmbientlightHiddenOnWatchPage
+      // Safari can report the ambientlight as not intersecting in fullscreen
+      (this.isAmbientlightHiddenOnWatchPage && !this.isFullscreen)
     );
 
   optionalFrame = async (fromSettingChange = false) => {
