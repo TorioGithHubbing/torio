@@ -211,36 +211,8 @@ wrapErrorHandler(async function loadContentScript() {
   }
   if (!loaded) return;
 
-  loaded = await new Promise((resolve) => {
-    let url;
-    try {
-      url = chrome.runtime.getURL('scripts/injected.js');
-    } catch {
-      setResourceWarning();
-      resolve(false);
-      return;
-    }
-
-    const script = document.createElement('script');
-    script.src = url;
-    script.async = true;
-    script.setAttribute('data-crash-options', JSON.stringify(crashOptions));
-    script.setAttribute('data-version', version);
-    script.addEventListener(
-      'error',
-      async function injectScriptOnError(event) {
-        await captureResourceLoadingException(script.src, event);
-        resolve(false);
-      }.bind(this)
-    );
-    script.addEventListener(
-      'load',
-      function injectStyleOnLoad() {
-        resolve(true);
-      }.bind(this)
-    );
-    document.head.appendChild(script);
-  });
+  // Safari: injected.js is registered as a MAIN world content script in the
+  // manifest because YouTube's CSP blocks <script src=safari-web-extension://...>
   if (!chrome?.runtime?.id) {
     setResourceWarning();
     return;
