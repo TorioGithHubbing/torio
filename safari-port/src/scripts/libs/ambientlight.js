@@ -801,6 +801,9 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
                   canSchedule: this.canScheduleNextFrame(),
                   scheduled: !!this.scheduledNextFrame,
                   paused: this.videoElem.paused,
+                  time: this.videoElem.currentTime,
+                  rs: this.videoElem.readyState,
+                  fitted: this.videoOffset && [this.videoOffset.width, this.videoOffset.height, window.innerWidth, window.innerHeight],
                   isFullscreen: this.isFullscreen,
                   filling: this.isFillingFullscreen,
                   atTop: this.atTop,
@@ -1898,10 +1901,29 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
     this.videoOffset = this.getElemRect(
       this.isVrVideo ? this.vrVideoElem : this.videoElem
     );
+    // The video element can fill the screen while the picture inside it is
+    // letterboxed by object-fit: contain (seen in Safari). Compare the size of the
+    // picture itself, otherwise the ambient light isn't drawn in the empty bars.
+    let fittedVideoWidth = this.videoOffset.width;
+    let fittedVideoHeight = this.videoOffset.height;
+    if (
+      this.videoElem.videoWidth &&
+      this.videoElem.videoHeight &&
+      this.videoOffset.width &&
+      this.videoOffset.height &&
+      getComputedStyle(this.videoElem).objectFit === 'contain'
+    ) {
+      const fitScale = Math.min(
+        this.videoOffset.width / this.videoElem.videoWidth,
+        this.videoOffset.height / this.videoElem.videoHeight
+      );
+      fittedVideoWidth = this.videoElem.videoWidth * fitScale;
+      fittedVideoHeight = this.videoElem.videoHeight * fitScale;
+    }
     this.isFillingFullscreen =
       this.isFullscreen &&
-      Math.abs(this.videoOffset.width - window.innerWidth) < 10 &&
-      Math.abs(this.videoOffset.height - window.innerHeight) < 10 &&
+      Math.abs(fittedVideoWidth - window.innerWidth) < 10 &&
+      Math.abs(fittedVideoHeight - window.innerHeight) < 10 &&
       noClipOrScale;
 
     if (
