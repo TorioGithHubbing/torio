@@ -65,7 +65,10 @@ const SettingsConfig = [
     label: 'WebGL renderer (uses less power)',
     description: 'Changing this reloads the webpage',
     type: 'checkbox',
-    default: true,
+    // Safari renders the WebGL blur with visible banding: use the 2D renderer by default
+    default: !/^((?!chrome|chromium|android).)*safari/i.test(
+      globalThis.navigator?.userAgent ?? ''
+    ),
   },
   {
     name: 'resolution',

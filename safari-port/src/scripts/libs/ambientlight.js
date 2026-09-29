@@ -284,40 +284,6 @@ export default class Ambientlight {
     return this.videoBitmap ?? video;
   }
 
-  // TEMP DEBUG
-  debugSafariFrame(label) {
-    globalThis.__ambDbg = (globalThis.__ambDbg || 0) + 1;
-    if (globalThis.__ambDbg > 6) return;
-    try {
-      const v = this.videoElem;
-      const b = this.projectorBuffer?.elem;
-      let px;
-      if (b?.getContext) {
-        const c = document.createElement('canvas');
-        c.width = 8;
-        c.height = 8;
-        const cx = c.getContext('2d');
-        cx.drawImage(b, 0, 0, b.width, b.height, 0, 0, 8, 8);
-        const d = cx.getImageData(0, 0, 8, 8).data;
-        const at = (x, y) => Array.from(d.slice((y * 8 + x) * 4, (y * 8 + x) * 4 + 3)).join('/');
-        px = { left: at(0, 4), mid: at(4, 4), right: at(7, 4) };
-      }
-      console.log('[ambient-safari-debug]', label, JSON.stringify({
-        mismatch: this.isSafariVideoBoxMismatch(),
-        isSafari: this.safariVideoBoxMismatchIsSafari,
-        bitmap: this.videoBitmap && [this.videoBitmap.width, this.videoBitmap.height],
-        pending: !!this.videoBitmapPending,
-        elem: [v.offsetWidth, v.offsetHeight],
-        intrinsic: [v.videoWidth, v.videoHeight],
-        buffer: b && [b.width, b.height, b.constructor?.name],
-        p: this.p,
-        px,
-      }));
-    } catch (e) {
-      console.log('[ambient-safari-debug] failed', String(e));
-    }
-  }
-
   shouldDrawDirectlyFromVideoElem = () =>
     this.enableMozillaBugReadPixelsWorkaround &&
     this.projector.webGLVersion === 2;
@@ -3345,7 +3311,6 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
               this.projectorBuffer.elem.width,
               this.projectorBuffer.elem.height
             );
-            this.debugSafariFrame('draw');
             if (this.buffersCleared) {
               this.previousProjectorBuffer.ctx.drawImage(
                 this.projectorBuffer.elem,
@@ -3474,7 +3439,6 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
             this.projectorBuffer.elem.width,
             this.projectorBuffer.elem.height
           );
-          this.debugSafariFrame('draw2');
         }
 
         if (!dontDrawAmbientlight) {
