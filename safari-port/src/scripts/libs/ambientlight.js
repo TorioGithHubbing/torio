@@ -3474,6 +3474,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
             this.projectorBuffer.elem.width,
             this.projectorBuffer.elem.height
           );
+          this.debugSafariFrame('draw2');
         }
 
         if (!dontDrawAmbientlight) {
