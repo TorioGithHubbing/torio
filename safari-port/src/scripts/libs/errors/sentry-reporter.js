@@ -146,6 +146,7 @@ export default class SentryReporter {
   static script = globalThis.yt ? 'injected' : 'content';
   static overflowProtection = 0;
   static async captureException(ex) {
+    console.error('[ambient-safari-debug]', ex, ex?.details);
     try {
       // Ignore errors that cannot be fixed
       if (ex?.message?.includes?.(`can't access dead object`))

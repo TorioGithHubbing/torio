@@ -3448,6 +3448,7 @@ Video ready state: ${readyStateToString(videoElem?.readyState)}`);
         wrapErrorHandler(this.scheduleBarSizeDetectionCallback)
       );
     } catch (ex) {
+      console.error('[ambient-safari-debug] bar detection', ex);
       if (!this.showedDetectBarSizeWarning) {
         this.showedDetectBarSizeWarning = true;
         throw ex;
